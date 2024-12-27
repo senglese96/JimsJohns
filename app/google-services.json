@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "451523469978",
+    "firebase_url": "https://jims-johns-default-rtdb.firebaseio.com",
+    "project_id": "jims-johns",
+    "storage_bucket": "jims-johns.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:451523469978:android:01f90250d9d7aab9ff3523",
+        "android_client_info": {
+          "package_name": "com.example.jimsjohns"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDjBhyEzS2J69PjwTCa_IyyMCYPvSHX5mE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
