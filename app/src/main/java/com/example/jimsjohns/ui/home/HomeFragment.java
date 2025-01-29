@@ -107,65 +107,79 @@ public class HomeFragment extends Fragment {
         return root;
     }
 
-    private void getLastLocation() {
-        if (ContextCompat.checkSelfPermission(this.getActivity(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Task<Location> task = fusedLocationProviderClient.getLastLocation();
-            task.addOnSuccessListener(new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    if (location != null) {
-                        currentLocation = location;
-                        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
-                        mapFragment.getMapAsync(new OnMapReadyCallback() {
-                            @SuppressLint({"MissingPermission", "PotentialBehaviorOverride"})
-                            @Override
-                            public void onMapReady(GoogleMap googleMap) {
-                                // When map is loaded
-                                myMap = googleMap;
-                                myMap.setInfoWindowAdapter(new BathroomInfoWindowAdapter(getActivity()));
-
-                                LatLng userLocation = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
-                                myMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
-                                myMap.moveCamera(CameraUpdateFactory.zoomTo(13));
-                                myMap.setMyLocationEnabled(true);
-
-                                loadMarkers();
-
-                                myMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-                                    @Override
-                                    public void onMapClick(@NonNull LatLng latLng) {
-                                        if(isCreating) {
-                                            myMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-                                            getChildFragmentManager().setFragmentResultListener(
-                                                    "bathroom",
-                                                    HomeFragment.this, new FragmentResultListener() {
-                                                @Override
-                                                public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle result) {
-                                                    Bathroom bathroom = BundleCompat.getSerializable(result, "bathroom", Bathroom.class);
-                                                    myMap.addMarker(new MarkerOptions()
-                                                            .position(new LatLng(
-                                                                    bathroom.getLatitude(),
-                                                                    bathroom.getLongitude()))
-                                                            .title(bathroom.getName())
-                                                            .snippet(bathroom.getSnippet())
-                                                    );
-                                                    DatabaseReference dbReference = firebaseDatabase.getReference("Bathrooms");
-                                                    String key = dbReference.push().getKey();
-                                                    dbReference.child(key).setValue(bathroom);
-                                                }
-                                            });
-                                            FragmentTransaction ft = getChildFragmentManager().beginTransaction();
-                                            DialogFragment bathroomForm = BathroomForm.newInstance(
-                                                    latLng.latitude, latLng.longitude, null);
-                                            bathroomForm.show(ft, "bathroomForm");
-                                        }
-                                    }
-                                });
-                            }
-                        });
-                    }
+    private OnSuccessListener<Location> onSuccessListener() {
+        return new OnSuccessListener<Location>() {
+            @Override
+            public void onSuccess(Location location) {
+                if (location != null) {
+                    currentLocation = location;
+                    SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
+                    mapFragment.getMapAsync(newMapReadyCallback());
                 }
-            });
+            }
+        };
+    }
+
+    private OnMapReadyCallback newMapReadyCallback() {
+        return new OnMapReadyCallback() {
+
+            @SuppressLint({"MissingPermission", "PotentialBehaviorOverride"})
+            @Override
+            public void onMapReady(GoogleMap googleMap) {
+                // When map is loaded
+                myMap = googleMap;
+                myMap.setInfoWindowAdapter(new BathroomInfoWindowAdapter(getActivity()));
+
+                LatLng userLocation = new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude());
+                myMap.moveCamera(CameraUpdateFactory.newLatLng(userLocation));
+                myMap.moveCamera(CameraUpdateFactory.zoomTo(13));
+                myMap.setMyLocationEnabled(true);
+
+                loadMarkers();
+
+                myMap.setOnMapClickListener(mapClickListener());
+            }
+        };
+    }
+
+    private GoogleMap.OnMapClickListener mapClickListener(){
+        return new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(@NonNull LatLng latLng) {
+                if(isCreating) {
+                    myMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+                    getChildFragmentManager().setFragmentResultListener(
+                            "bathroom",
+                            HomeFragment.this, new FragmentResultListener() {
+                                @Override
+                                public void onFragmentResult(@NonNull String requestKey, @NonNull Bundle result) {
+                                    Bathroom bathroom = BundleCompat.getSerializable(result, "bathroom", Bathroom.class);
+                                    myMap.addMarker(new MarkerOptions()
+                                            .position(new LatLng(
+                                                    bathroom.getLatitude(),
+                                                    bathroom.getLongitude()))
+                                            .title(bathroom.getName())
+                                            .snippet(bathroom.getSnippet())
+                                    );
+                                    DatabaseReference dbReference = firebaseDatabase.getReference("Bathrooms");
+                                    String key = dbReference.push().getKey();
+                                    dbReference.child(key).setValue(bathroom);
+                                }
+                            });
+                    FragmentTransaction ft = getChildFragmentManager().beginTransaction();
+                    DialogFragment bathroomForm = BathroomForm.newInstance(
+                            latLng.latitude, latLng.longitude, null);
+                    bathroomForm.show(ft, "bathroomForm");
+                }
+            }
+        };
+    }
+
+    private void getLastLocation() {
+        if (ContextCompat.checkSelfPermission(this.getActivity(),
+                android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            Task<Location> task = fusedLocationProviderClient.getLastLocation();
+            task.addOnSuccessListener(onSuccessListener());
         } else {
             requestPermissionLauncher.launch(android.Manifest.permission.ACCESS_FINE_LOCATION);
         }
